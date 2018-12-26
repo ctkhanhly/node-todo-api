@@ -1,6 +1,7 @@
 //mocha and nodemon don't need to be required
 const expect = require('expect');
 const request = require('supertest');
+const {ObjectID} = require('mongodb');
 
 //querying into the database -> access to model
 
@@ -10,8 +11,11 @@ const {Todo} = require('./../models/todo');
 
 
 const todos = [{
+    //specify id here so we can access at get id test below
+    _id: new ObjectID(),
     text: 'First test todo'
 },{
+    _id: new ObjectID(),
     text: 'Second test todo'
 }];
 
@@ -92,7 +96,8 @@ describe('POST /todo',()=>{
             Todo.find().then((todos)=>{
                 expect(todos.length).toBe(2);
                 done();
-            }, (e) => done(e));
+            }).catch((e) => done(e)); //find and toBe
+            //(e)=>done(e); only catches todos err?
         });
     })
     
@@ -109,3 +114,29 @@ describe('GET /todos',()=>{
         //no need to pass a function to end b/c dont do asynchronous
     });
 });
+
+describe('GET /todos/:id',()=>{
+    it('should return todo doc', (done)=>{
+        request(app)
+        .get(`/todos/${todos[0]._id.toHexString()}`)
+        .expect(200)
+        .expect((res)=>{
+            expect(res.body.todo.text).toBe(todos[0].text);
+        }).end(done);
+    });
+
+    it('should return 404 if todo not found',(done)=>{
+        request(app)
+        .get('/todos/new ObjectID().toHexString()')
+        .expect(404)
+        .end(done);
+    });
+
+    it('should return 404 if invalid id - id is non-ObjectID',(done)=>{
+        request(app)
+        .get('/todos/123')
+        .expect(404)
+        .end(done);
+    });
+});
+
