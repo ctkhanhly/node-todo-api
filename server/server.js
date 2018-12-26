@@ -50,7 +50,7 @@ app.get('/todos',(req,res)=>{
         res.send({todos});
     },(e)=>{
         res.status(400).send(e);
-    })
+    });
 });
 
 //callback will get fired once the app is up
@@ -59,3 +59,5 @@ app.listen(3000,()=>{
 })
 
 module.exports = {app};
+
+//postman makes it easier to fire off http request- get/post method

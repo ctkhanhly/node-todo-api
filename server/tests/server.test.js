@@ -9,15 +9,31 @@ const {app} = require('./../server');
 const {Todo} = require('./../models/todo');
 
 
+const todos = [{
+    text: 'First test todo'
+},{
+    text: 'Second test todo'
+}];
+
 //beforeEach lets us run some code before every single test case
 //make sure the database is empty
 //this function gets called before every test case and only move on
 //to the test case once we call done => can do sth asynchronous
+
+//----
+// beforeEach((done)=>{
+//     //similar to mongodb native method
+//     Todo.remove({}).then(()=>  done());
+//     //now our database will be empty before every request
+// })
+//----
+//insertMany takes an array
 beforeEach((done)=>{
-    //similar to mongodb native method
-    Todo.remove({}).then(()=>  done());
-    //now our database will be empty before every request
-})
+    Todo.remove({}).then(()=>{
+        //return respond
+        return Todo.insertMany(todos);
+    }).then(()=>done());
+});
 
 describe('POST /todo',()=>{
     it('should create a new todo',(done)=>{
@@ -40,14 +56,23 @@ describe('POST /todo',()=>{
 
             //similar to mongodb native find method - fetch everything in that 
             //collection
-            Todo.find().then((todos)=>{
-                //either of these fail,test still pass unless add catch
-                //assume that nothing already in the database- true thanks
-                //to beforeEach
+            //---
+            // Todo.find().then((todos)=>{
+            //     //either of these fail,test still pass unless add catch
+            //     //assume that nothing already in the database- true thanks
+            //     //to beforeEach
+            //     expect(todos.length).toBe(1);
+            //     expect(todos[0].text).toBe(text);
+            //     done();
+            // }).catch((e)=> done(e));
+            //---
+
+            Todo.find({text}).then((todos)=>{
                 expect(todos.length).toBe(1);
                 expect(todos[0].text).toBe(text);
                 done();
             }).catch((e)=> done(e));
+            //---
         });
     }),
 
@@ -63,11 +88,24 @@ describe('POST /todo',()=>{
                 return done(err);
             }
 
+            //length = 2 at beforeEach
             Todo.find().then((todos)=>{
-                expect(todos.length).toBe(0);
+                expect(todos.length).toBe(2);
                 done();
             }, (e) => done(e));
         });
     })
     
+});
+
+describe('GET /todos',()=>{
+    it('should get all todos', (done)=>{
+        request(app)
+        .get('/todos')
+        .expect(200)
+        .expect((res)=>{
+            expect(res.body.todos.length).toBe(2);
+        }).end(done);
+        //no need to pass a function to end b/c dont do asynchronous
+    });
 });
