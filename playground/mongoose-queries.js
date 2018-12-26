@@ -1,6 +1,8 @@
 const  {mongoose} = require('./../server/db/mongoose');
 const {Todo} = require('./../server/models/todo');
 const {User} = require('./../server/models/user');
+//const {MongoClient, ObjectID} = require('mongodb');
+
 
 // var id = '5c22d598d6a713865766f0ea';
 // //change a number=> valid id, but not in the database
@@ -63,3 +65,4 @@ User.findById(id).then((user)=>{
     }
     console.log('User', user._doc);
 },(e)=>console.log(e));
+
