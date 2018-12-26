@@ -38,11 +38,20 @@ app.post('/todos', (req,res)=>{
     });
 })
 
-//read todo- get all todos
+//read todo- get/return all todos
 //GET/todos
-//individual todo + id
+//individual todo + id when have authentication
 //GET/todos//98rqwr98ew89q
 
+app.get('/todos',(req,res)=>{
+    Todo.find().then((todos)=>{
+        //send back obj rather than array so in the future we can add
+        //more properties like code etc
+        res.send({todos});
+    },(e)=>{
+        res.status(400).send(e);
+    })
+});
 
 //callback will get fired once the app is up
 app.listen(3000,()=>{
