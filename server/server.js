@@ -27,7 +27,7 @@ app.post('/todos', (req,res)=>{
     //console.log(req.body);
     var todo = new Todo({
         text: req.body.text
-    })
+    });
 
     todo.save().then((doc)=>{
         //now send the respond back
@@ -35,7 +35,7 @@ app.post('/todos', (req,res)=>{
         //http status, default by express is 200
     }, (e)=>{
         res.status(400).send(e);
-    })
+    });
 })
 
 //read todo- get all todos
@@ -48,3 +48,5 @@ app.post('/todos', (req,res)=>{
 app.listen(3000,()=>{
     console.log('Started on port 3000');
 })
+
+module.exports = {app};
