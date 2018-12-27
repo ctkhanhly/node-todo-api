@@ -9,6 +9,9 @@ var {User} = require('./models/user');
 var {ObjectID} = require('mongodb');
 
 var app = express();
+//it will be set if it runs on heroku, else  wont
+const port = process.env.PORT || 3000;
+
 
 //in rest api: crud operation: create, update, delete. configure route
 //post route,  where we create new todo- send a json obj to server
@@ -74,8 +77,8 @@ app.get('/todos/:id', (req,res)=>{
 });
 
 //callback will get fired once the app is up
-app.listen(3000,()=>{
-    console.log('Started on port 3000');
+app.listen(port,()=>{
+    console.log(`Started on port ${port}`);
 })
 
 module.exports = {app};
