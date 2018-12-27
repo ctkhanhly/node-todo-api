@@ -1,12 +1,14 @@
+const _ = require('lodash');
 //lib import
-var express = require('express');
-var bodyParser = require('body-parser');
+const express = require('express');
+const bodyParser = require('body-parser');
+const {ObjectID} = require('mongodb');
 
 //local import
 var {mongoose} = require('./db/mongoose');
 var {Todo} = require('./models/todo');
 var {User} = require('./models/user');
-var {ObjectID} = require('mongodb');
+
 
 var app = express();
 //it will be set if it runs on heroku, else  wont
@@ -91,6 +93,43 @@ app.delete('/todos/:id', (req,res)=>{
     }).catch((e)=> res.status(400).send());
 });
 
+//UPDATE - use patch to update resource
+
+app.patch('/todos/:id', (req,res)=>{
+    var id = req.params.id;
+    //where update is stored- where needs lodash
+    //they can send any property, maybe not even on todo item
+    //or properties we dont want them to update like completeAt
+    //this is updated by us when user update complete property
+    //pull out just the property we want user to update: pick
+    //arguments: obj, array of properties that you wanna pull off
+    //if they exist
+    var body = _.pick(req.body, ['text', 'completed']);
+
+    if(!ObjectID.isValid(id)){
+        res.status(404).send();
+    }
+    
+    if(_.isBoolean(body.completed) && body.completed){
+        //miliseconds since midnight  jan 1st 1970
+        //>0 forward, <0: past
+        body.completedAt = new Date().getTime();
+    }else{
+        body.completed = false;
+        body.completedAt = null;
+        //remove a value from database = setting to null
+    }
+
+    //$set sets a set of key-value pairs, which is body in this case
+    //new =  return originals in findOneAndUpdate of mongodb in playground
+    //update: return the updated one, not the original
+    Todo.findByIdAndUpdate(id,{$set:body},{new:true}).then((todo)=>{
+        if(!todo){
+            return res.status(404).send();
+        }
+        res.status(200).send({todo});
+    }).catch((e)=> res.status(400).send());
+});
 //callback will get fired once the app is up
 app.listen(port,()=>{
     console.log(`Started on port ${port}`);
