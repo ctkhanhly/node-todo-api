@@ -1,3 +1,5 @@
+require('./config/config');
+
 const _ = require('lodash');
 //lib import
 const express = require('express');
@@ -12,8 +14,9 @@ var {User} = require('./models/user');
 
 var app = express();
 //it will be set if it runs on heroku, else  wont
-const port = process.env.PORT || 3000;
-
+// const port = process.env.PORT || 3000;
+//NODE_ENV
+const port = process.env.PORT;
 
 //in rest api: crud operation: create, update, delete. configure route
 //post route,  where we create new todo- send a json obj to server
