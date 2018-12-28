@@ -35,30 +35,38 @@ var UserSchema = new mongoose.Schema({
 
 //override a method
 UserSchema.methods.toJSON = function(){
-    //when a mongoose model is converted into a json value
     var user = this;
-    //convert mongoose model to regular obj where only variables available
-    //in the document exists
     var userObject = user.toObject();
     return _.pick(userObject, ['_id','email']);
 };
 
-//UserSchema.methods is an obj, add any instance methods,
-//have access to individual doc
-//arrow functions don't have this keyword, this stores individual doc
+
 UserSchema.methods.generateAuthToken = function(){
     var user = this;
     var access = 'auth';
     var token = jwt.sign({_id: user._id.toHexString(), access}, 'abc123').toString();
-    //user.tokens.push({access,token}); //error depending on versions of mongoose
-    //update the local model
+   
     user.tokens = user.tokens.concat([{access,token}]);
-    //save the local user model
-    //return the Promise of then so in server.js can chain another Promise
+    
     return user.save().then(()=>{
         return token;
-        //this value will get passed as the success argument
-        //for the next then call
+    });
+};
+
+//model method, UserSchema.statics is also an obj
+UserSchema.statics.findByToken = function(token){
+    var User = this;
+    var decoded;
+    try{
+        decoded = jwt.verify(token, 'abc123');
+    }catch(e){
+        return Promise.reject();
+    }
+   
+    return User.findOne({
+        '_id': decoded._id,
+        'tokens.token': token,
+        'tokens.access': 'auth'
     });
 };
 
