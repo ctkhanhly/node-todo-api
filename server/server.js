@@ -133,6 +133,38 @@ app.patch('/todos/:id', (req,res)=>{
         res.status(200).send({todo});
     }).catch((e)=> res.status(400).send());
 });
+
+// POST /users
+//sign up
+app.post('/users', (req,res)=>{
+    var body = _.pick(req.body, ['email', 'password']);
+
+    //if no email provided, none in body and validation will also fail
+    var user = new User(body);
+
+    //we can use user as argument to then, but that value is identical
+    //to the user variable above, same thing in memory
+    //=> can clear up the argument, just clears up what's happening
+    //doesnt change functionality
+    user.save().then(()=>{
+        //res.status(200).send({user});
+        return user.generateAuthToken();
+    }).then((token)=>{
+        //sends back the only user defined above
+        //send token back as http respond header
+        //header: 2 arguments, key-value pairs, key: header's name
+        //value is the value you wanna set the header to
+        //when you prefix a header with x-: custom header,
+        //not what http supports by default, a header that you're using
+        //for specific purposes 
+        //custom header to store jwt token scheme
+        
+        res.header('x-auth',token).send(user);
+    })
+    .catch((e)=> res.status(400).send(e));
+
+});
+
 //callback will get fired once the app is up
 app.listen(port,()=>{
     console.log(`Started on port ${port}`);
@@ -141,3 +173,8 @@ app.listen(port,()=>{
 module.exports = {app};
 
 //postman makes it easier to fire off http request- get/post method
+
+//made changes in user model
+//1.shut down server
+//2. wipe todoapp database
+//3. restart server
