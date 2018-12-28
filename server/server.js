@@ -6,6 +6,7 @@ const _ = require('lodash');
 const express = require('express');
 const bodyParser = require('body-parser');
 const {ObjectID} = require('mongodb');
+const bcrypt = require('bcryptjs');
 
 //local import
 var {mongoose} = require('./db/mongoose');
@@ -124,6 +125,19 @@ app.post('/users', (req,res)=>{
 app.get('/users/me', authenticate,(req,res)=>{
     res.send(req.user);
 });
+
+//POST /users/login {email, password}
+app.post('/users/login', (req,res)=>{
+    var body = _.pick(req.body, ['email', 'password']);
+    User.findByCredentials(body.email, body.password).then((user)=>{
+        //create a new token each login
+        return user.generateAuthToken().then((token)=>{
+            res.header('x-auth',token).send(user);
+        });
+    }).catch((e)=> res.status(400).send());
+    //no user, catch gets fired as defined by findByCredentials
+});
+
 app.listen(port,()=>{
     console.log(`Started on port ${port}`);
 });
