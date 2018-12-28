@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const validator = require('validator');
 const jwt = require('jsonwebtoken');
 const _ = require('lodash');
+const bcrypt = require('bcryptjs');
 
 var UserSchema = new mongoose.Schema({
     email: {
@@ -69,7 +70,26 @@ UserSchema.statics.findByToken = function(token){
         'tokens.access': 'auth'
     });
 };
+//run code before an event, 1st argument- event: save, callback
+//has to provide argument next
+UserSchema.pre('save', function(next){
+    var user = this;
 
+    //check if pw was modified
+    //save doc but never update pw, pw already hashed
+    //prevent hashing hashed pw again
+    //only encrypt if  it was just modified
+    if(user.isModified('password')){
+        bcrypt.genSalt(10, (err,salt)=>{
+            bcrypt.hash(user.password,salt, (err,hash)=>{
+                user.password = hash;
+                next();
+            });
+        });
+    }else{
+        next();
+    }
+})
 //mongoose.model(modelName, schema)
 //this declaration has to be after defining methods!!!!!!!
 var User = mongoose.model('User', UserSchema);

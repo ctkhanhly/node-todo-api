@@ -2,7 +2,44 @@
 //1-way function, only 1 output for an input
 const {SHA256} = require('crypto-js');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 
+//salt our password: genSAlt
+//password1 -> mmhnnm (hash)
+//add a bunch of random characters to that hash
+//passwordkahfiuqhriu2334
+//=> hash same pw multiple times => different result, no1 can pre-compute 
+//the table to look up the pw
+//arguments: number of rounds to use to generate salt, callback
+//bcrypt is inherently slow=> prevent brute-force attack
+//bigger number, longer it takes, prevent brute-force
+//adding unneccessary length to ur API for pw is good idea, not another
+//prevent s.o from making a million requests/sec, a few hundred instead
+//reduce the chance they can crack the pw
+var password  = '1234abc!';
+bcrypt.genSalt(10,(err,salt)=>{
+    //the thing we wanna hash, salt, callback
+    bcrypt.hash(password,salt,(err,hash)=>{
+        console.log(hash);
+        //number of rounds, length for hash and salt
+        //dont need to have both salt value and pw in database thanks to bcrypt
+        //salt is built-in
+    })
+})
+//s.o generate a list of pw and hash  value and used as lookup table
+//have all 15k of them in obj, key= pw, value = hash, just have to 
+//find the pw that matches the hash
+//hash
+
+var hashedPW = '$2a$10$Mu1ylfef8WPNGO4uz.7NxeGRQuP8GpnbeqTJ2dLXWWIO6br.tBpi2';
+
+//3rd argument: callback
+bcrypt.compare(password, hashedPW,(err,res)=>{
+    //res either true or false
+    console.log(res);
+})
+
+/*
 var data = {
     id: 10
 };
