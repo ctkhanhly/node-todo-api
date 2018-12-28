@@ -1,3 +1,4 @@
+//starts doing the configuration here
 require('./config/config');
 
 const _ = require('lodash');
@@ -128,5 +129,3 @@ app.listen(port,()=>{
 });
 
 module.exports = {app};
-
-
