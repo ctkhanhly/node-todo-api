@@ -264,7 +264,7 @@ describe('POST /users', ()=>{
                 //b/c pw is hashed
                 expect(user.password).toNotBe(password);
                 done();
-            });
+            }).catch((e)=> done(e));
         });
     });
 
@@ -284,6 +284,65 @@ describe('POST /users', ()=>{
         .send({email: users[0].email, password: '1234567'})
         .expect(400)
         .end(done);
+    });
+});
+
+describe('POST /users/login', ()=>{
+    it('should login user and return auth token', (done)=>{
+        //valid email and pw
+        request(app)
+        .post('/users/login')
+        .send({
+            email: users[1].email,
+            password: users[1].password
+        })
+        .expect(200)
+        .expect((res)=>{
+            expect(res.headers['x-auth']).toExist();
+        })
+        .end((err,res)=>{
+            if(err){
+                return done(err);
+            }
+
+            //catch any async func
+            //query
+            User.findById(users[1]._id).then((user)=>{
+                //token created
+                expect(user.tokens[0]).toInclude({
+                    access: 'auth',
+                    token: res.headers['x-auth']
+                });
+                done();
+            }).catch((e)=> done(e));
+        });
+    });
+
+    it('should reject invalid login', (done)=>{
+        //x-auth notExist, tokens lentgh = 0 user1 does
+        //not have  one at the start, 400 status
+        request(app)
+        .post('/users/login')
+        .expect(400)
+        .expect((res)=>{
+            expect(res.headers['x-auth']).toNotExist();
+            //expect(users[1].tokens).toNotExist();
+            //access from seed
+        })
+        .end((err,res)=>{
+            if(err){
+                return done(err);
+            }
+
+            //catch any async func
+            //query
+            //access from model
+            User.findById(users[1]._id).then((user)=>{
+                //token not created
+                expect(user.tokens.length).toBe(0);
+                done();
+            }).catch((e)=> done(e));
+        });
     });
 });
 
