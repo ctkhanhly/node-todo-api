@@ -138,6 +138,17 @@ app.post('/users/login', (req,res)=>{
     //no user, catch gets fired as defined by findByCredentials
 });
 
+//log out also requires authentication
+//make this route private, only authenticated to access this route
+app.delete('/users/me/token',authenticate,(req,res)=>{
+    //delete token that was used inside middleware
+    //instance method removeToken
+    req.user.removeToken(req.token).then(()=>{
+        res.status(200).send();
+    }, ()=>{
+        res.status(400).send();
+    })
+});
 app.listen(port,()=>{
     console.log(`Started on port ${port}`);
 });
