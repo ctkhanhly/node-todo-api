@@ -175,13 +175,4 @@ app.listen(port,()=>{
 module.exports = {app};
 
 
-//token is given back at x-auth when logging, signing up 
-//get todo, post todo, get user needs token
 
-//token is deleted when logged out, created when logged in
-//=> new token each time logged in
-//=> needs to log in to change or access anything
-//user somehow has to save it to change its own id or anything
-//now another user create a token with ur id, but doesnt have ur secret
-//=> different token from what is currently stored in the database, hidden
-//from both user and the 3rd-party person
