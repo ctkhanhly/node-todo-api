@@ -76,7 +76,7 @@ var token = {
     data,
     hash: SHA256(JSON.stringify(data) + 'somesecret').toString()
 }
-//sult hash: add sth to the hash that is unique that changes the value
+//salt hash: add sth to the hash that is unique that changes the value
 //password + some randomly generated value: salt
 //different salting everytime => not getting the same hash twice
 
@@ -102,3 +102,6 @@ if(resultHash === token.hash){
 */
 
 //jsonwebtoken: 2 functions  1 to create token, the other is to verify it
+
+
+//token = hash the data itself

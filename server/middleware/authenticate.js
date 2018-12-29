@@ -1,6 +1,7 @@
 var {User} = require('./../models/user');
 
 //middleware
+//find user associted with the token
 var authenticate = (req,res,next)=>{
     var key = 'x-auth'
     var token = req.header('x-auth');

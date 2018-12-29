@@ -19,8 +19,15 @@ var Todo = mongoose.model('Todo', {
         type: Number,
         //only set when the task is completed
         default: null
-    }
+    },
     //no need for createdAt timeStamp - built in to id
+    //id of user who created the todo, user indeed has 
+    //_: ObjectID
+    _creator: {
+        type: mongoose.Schema.Types.ObjectId,
+        required: true
+    }
 });
 
 module.exports =  {Todo};
+

@@ -21,18 +21,24 @@ const users = [{
 },{
     _id: userTwoId,
     email: 'ly@example.com',
-    password: 'userTwopw'
+    password: 'userTwopw',
+    tokens:[{
+        access: 'auth',
+        token: jwt.sign({ _id: userTwoId, access: 'auth'}, 'abc123').toString()
+    }]
 }];
 
 const todos = [{
     //specify id here so we can access at get id test below
     _id: new ObjectID(),
-    text: 'First test todo'
+    text: 'First test todo',
+    _creator: userOneId
 },{
     _id: new ObjectID(),
     text: 'Second test todo',
     completed: true,
-    completedAt: 123
+    completedAt: 123,
+    _creator: userTwoId
 }];
 
 //feed beforeEach in server.test.js

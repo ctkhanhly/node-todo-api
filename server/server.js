@@ -20,10 +20,13 @@ var app = express();
 const port = process.env.PORT;
 
 app.use(bodyParser.json());
-app.post('/todos', (req,res)=>{
+
+//has to provide token x-auth
+app.post('/todos', authenticate, (req,res)=>{
 
     var todo = new Todo({
-        text: req.body.text
+        text: req.body.text,
+        _creator: req.user._id
     });
 
     todo.save().then((doc)=>{
@@ -40,8 +43,12 @@ app.post('/todos', (req,res)=>{
 //individual todo + id when have authentication
 //GET/todos//98rqwr98ew89q
 
-app.get('/todos',(req,res)=>{
-    Todo.find().then((todos)=>{
+//require x-auth token
+app.get('/todos', authenticate, (req,res)=>{
+    Todo.find({
+        //only authenticated user instead of all todos
+        _creator: req.user._id
+    }).then((todos)=>{
         res.send({todos});
     },(e)=>{
         res.status(400).send(e);
@@ -51,13 +58,19 @@ app.get('/todos',(req,res)=>{
 //url parameter: colon + name
 //GET /todo/${id}
 //create an id variable, on req obj, we can access that variable
-app.get('/todos/:id', (req,res)=>{
+//provide x-auth token - logged in b/c has valid token = authenticated
+app.get('/todos/:id', authenticate, (req,res)=>{
     
     var id = req.params.id;
     if(!ObjectID.isValid(id)){
         return res.status(404).send();
     }
-    Todo.findById(id).then((todo)=>{
+
+    //only get this todo by id if the user owns it
+    Todo.findOne({
+        _id: id,
+        _creator: req.user._id
+    }).then((todo)=>{
         if(!todo){
             return res.status(404).send();
         }
@@ -65,13 +78,16 @@ app.get('/todos/:id', (req,res)=>{
     }).catch((e)=>res.status(400).send());
 });
 
-app.delete('/todos/:id', (req,res)=>{
+app.delete('/todos/:id', authenticate, (req,res)=>{
     var id = req.params.id;
     if(!ObjectID.isValid(id)){
         res.status(404).send();
     }
 
-    Todo.findByIdAndRemove(id).then((todo)=>{
+    Todo.findOneAndRemove({
+        _id: id,
+        _creator: req.user._id
+    }).then((todo)=>{
         if(!todo){
             //todo is not found, no doc
             return res.status(404).send();
@@ -82,7 +98,7 @@ app.delete('/todos/:id', (req,res)=>{
 
 //UPDATE - use patch to update resource
 
-app.patch('/todos/:id', (req,res)=>{
+app.patch('/todos/:id', authenticate, (req,res)=>{
     var id = req.params.id;
     var body = _.pick(req.body, ['text', 'completed']);
 
@@ -97,7 +113,10 @@ app.patch('/todos/:id', (req,res)=>{
         body.completedAt = null;
     }
 
-    Todo.findByIdAndUpdate(id,{$set:body},{new:true}).then((todo)=>{
+    Todo.findOneAndUpdate({
+        _id: id,
+        _creator: req.user.id
+    },{$set:body},{new:true}).then((todo)=>{
         if(!todo){
             return res.status(404).send();
         }
@@ -154,3 +173,15 @@ app.listen(port,()=>{
 });
 
 module.exports = {app};
+
+
+//token is given back at x-auth when logging, signing up 
+//get todo, post todo, get user needs token
+
+//token is deleted when logged out, created when logged in
+//=> new token each time logged in
+//=> needs to log in to change or access anything
+//user somehow has to save it to change its own id or anything
+//now another user create a token with ur id, but doesnt have ur secret
+//=> different token from what is currently stored in the database, hidden
+//from both user and the 3rd-party person

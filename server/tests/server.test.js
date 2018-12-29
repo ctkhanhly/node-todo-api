@@ -29,12 +29,14 @@ const {User} = require('./../models/user');
 beforeEach(populateUsers);
 beforeEach(populateTodos);
 
-describe('POST /todo',()=>{
+describe('POST /todos',()=>{
+    //currently logged in user is user 1 by default
     it('should create a new todo',(done)=>{
         var text = 'Test todo text';
         //send data: an obj, will be converted to json by supertest
         request(app)
         .post('/todos')
+        .set('x-auth',users[0].tokens[0].token)
         .send({text})
         .expect(200)
         .expect((res)=>{
@@ -75,6 +77,7 @@ describe('POST /todo',()=>{
     it('should not create todo with invalid body data',(done)=>{
         request(app)
         .post('/todos')
+        .set('x-auth',users[0].tokens[0].token)
         .send({})
         .expect(400)
         .end((err,res)=>{
@@ -97,27 +100,40 @@ describe('GET /todos',()=>{
     it('should get all todos', (done)=>{
         request(app)
         .get('/todos')
+        .set('x-auth',users[0].tokens[0].token)
         .expect(200)
         .expect((res)=>{
-            expect(res.body.todos.length).toBe(2);
+            expect(res.body.todos.length).toBe(1);
         }).end(done);
         //no need to pass a function to end b/c dont do asynchronous
     });
 });
 
 describe('GET /todos/:id',()=>{
+    //fetch the first todo, which is owned by the first user
     it('should return todo doc', (done)=>{
         request(app)
         .get(`/todos/${todos[0]._id.toHexString()}`)
+        .set('x-auth',users[0].tokens[0].token)
         .expect(200)
         .expect((res)=>{
             expect(res.body.todo.text).toBe(todos[0].text);
         }).end(done);
     });
 
+    //user2 cannot fetch todo by user1
+    it('should not return todo doc created by other user', (done)=>{
+        request(app)
+        .get(`/todos/${todos[1]._id.toHexString()}`)
+        .set('x-auth',users[0].tokens[0].token)
+        .expect(404)
+        .end(done);
+    });
+
     it('should return 404 if todo not found',(done)=>{
         request(app)
         .get('/todos/new ObjectID().toHexString()')
+        .set('x-auth',users[0].tokens[0].token)
         .expect(404)
         .end(done);
     });
@@ -125,6 +141,7 @@ describe('GET /todos/:id',()=>{
     it('should return 404 if invalid id - id is non-ObjectID',(done)=>{
         request(app)
         .get('/todos/123')
+        .set('x-auth',users[0].tokens[0].token)
         .expect(404)
         .end(done);
     });
@@ -137,6 +154,7 @@ describe('DELETE /todos/:id',()=>{
 
         request(app)
         .delete(`/todos/${id}`)
+        .set('x-auth',users[1].tokens[0].token)
         .expect(200)
         .expect((res)=>{
             expect(res.body.todo._id).toBe(id)
@@ -154,17 +172,45 @@ describe('DELETE /todos/:id',()=>{
         });
     });
 
+    it('should not remove a todo if another user logged in',(done)=>{
+        var id = todos[0]._id.toHexString();
+
+        //in server.js-> findOneAndRemove won't return any document
+        //=> 404 sent back
+        request(app)
+        .delete(`/todos/${id}`)
+        .set('x-auth',users[1].tokens[0].token)
+        .expect(404)
+        .end((err,res)=>{
+            if(err){
+                return done(err);
+            }
+
+            Todo.findById(id).then((todo)=>{
+                //b/c not authenticated, doesnt really delete 
+                expect(todo).toExist();
+                //important****
+                done();
+            }).catch((e)=>done(e));
+        });
+    });
+
+    //can be called with either user
     it('should return 404 if todo not found', (done)=>{
         var id = new ObjectID().toHexString();
         request(app)
         .delete(`/todos/${id}`)
+        .set('x-auth',users[1].tokens[0].token)
         .expect(404)
         .end(done);
     });
+
+    //either user
     it('should return 404 if the ObjectID is invalid',(done)=>{
         var id = '123'
         request(app)
         .delete(`/todos/${id}`)
+        .set('x-auth',users[1].tokens[0].token)
         .expect(404)
         .end(done);
     });
@@ -176,6 +222,7 @@ describe('PATCH /todos/:id',()=>{
         var text = "have to complete section 8"
         request(app)
         .patch(`/todos/${id}`)
+        .set('x-auth',users[0].tokens[0].token)
         .send({text, completed: true})
         .expect(200)
         .expect((res)=>{
@@ -190,11 +237,44 @@ describe('PATCH /todos/:id',()=>{
         //     done();
         // });
     });
+
+    //404 b/c findOneAndUpdate cannot find creator
+    it('should not update the todo if another user logged in', (done)=>{
+        var id = todos[0]._id.toHexString();
+        var text = "have to complete section 8"
+        request(app)
+        .patch(`/todos/${id}`)
+        .set('x-auth',users[1].tokens[0].token)
+        .send({text, completed: true})
+        .expect(404)
+        .end(done);
+        // .end((err,res)=>{
+        //     if(err){
+        //         return done(err);
+        //     }
+
+        //     Todo.findById(id).then((todo)=>{
+        //         expect(todo.text).toNotBe(text);
+        //         expect(todo.completed).toBe(false);
+        //         expect(todo.completedAt).toBe(null);
+        //         done();
+        //     }).catch((e)=>done(e));
+        // });
+
+        // }).end((err,res)=>{
+        //     if(err){
+        //         return done(err);
+        //     }
+        //     done();
+        // });
+    });
+
     it('should clear completedAt when todo is not completed', (done)=>{
         var id = todos[1]._id.toHexString();
         var text = 'Updated test text';
         request(app)
         .patch(`/todos/${id}`)
+        .set('x-auth',users[1].tokens[0].token)
         .send({text, completed:false})
         .expect(200)
         .expect((res)=>{
@@ -307,9 +387,11 @@ describe('POST /users/login', ()=>{
 
             //catch any async func
             //query
+            //there is an existing obj in tokens array,
+            //logged in added another token
             User.findById(users[1]._id).then((user)=>{
                 //token created
-                expect(user.tokens[0]).toInclude({
+                expect(user.tokens[1]).toInclude({
                     access: 'auth',
                     token: res.headers['x-auth']
                 });
@@ -339,7 +421,7 @@ describe('POST /users/login', ()=>{
             //access from model
             User.findById(users[1]._id).then((user)=>{
                 //token not created
-                expect(user.tokens.length).toBe(0);
+                expect(user.tokens.length).toBe(1);
                 done();
             }).catch((e)=> done(e));
         });
