@@ -165,7 +165,10 @@ describe('DELETE /todos/:id',()=>{
             }
 
             Todo.findById(id).then((todo)=>{
-                expect(todo).toNotExist();
+                //mjackson expect
+                //expect(todo).toNotExist();
+                //jest expect equivalent
+                expect(todo).toBeFalsy();
                 //important****
                 done();
             }).catch((e)=>done(e));
@@ -188,7 +191,9 @@ describe('DELETE /todos/:id',()=>{
 
             Todo.findById(id).then((todo)=>{
                 //b/c not authenticated, doesnt really delete 
-                expect(todo).toExist();
+                //expect(todo).toExist();
+                //jest expect
+                expect(todo).toBeTruthy();
                 //important****
                 done();
             }).catch((e)=>done(e));
@@ -228,7 +233,10 @@ describe('PATCH /todos/:id',()=>{
         .expect((res)=>{
             expect(res.body.todo.text).toBe(text);
             expect(res.body.todo.completed).toBe(true);
-            expect(res.body.todo.completedAt).toBeA('number');
+            //mjackson
+            //expect(res.body.todo.completedAt).toBeA('number');
+            //jest
+            expect(typeof res.body.todo.completedAt).toBe('number');//string, boolean
         }).end(done);
         // }).end((err,res)=>{
         //     if(err){
@@ -280,7 +288,9 @@ describe('PATCH /todos/:id',()=>{
         .expect((res)=>{
             expect(res.body.todo.text).toBe(text);
             expect(res.body.todo.completed).toBe(false);
-            expect(res.body.todo.completedAt).toNotExist();
+            //expect(res.body.todo.completedAt).toNotExist();
+            //jest
+            expect(res.body.todo.completedAt).toBeFalsy();
         }).end(done);
         // }).end((err,res)=>{
         //     if(err){
@@ -329,8 +339,14 @@ describe('POST /users', ()=>{
         .expect((res)=>{
             //res.headers obj has the header called x-auth
             //access the property, cannot do . notation b/c - will cause error
-            expect(res.headers['x-auth']).toExist();//exist b.c we dont know
-            expect(res.body._id).toExist();//unknown to us now
+            //mjackson expect
+            //------
+            // expect(res.headers['x-auth']).toExist();//exist b.c we dont know
+            // expect(res.body._id).toExist();//unknown to us now
+            //----
+            //jest
+            expect(res.headers['x-auth']).toBeTruthy();
+            expect(res.body._id).toBeTruthy();
             expect(res.body.email).toBe(email);//we have email though
         })
         .end((err)=>{
@@ -340,9 +356,12 @@ describe('POST /users', ()=>{
 
             //should find it since we got 200 status above
             User.findOne({email}).then((user)=>{
-                expect(user).toExist();
+                expect(user).toBeTruthy();
                 //b/c pw is hashed
-                expect(user.password).toNotBe(password);
+                //mjackson expect
+                //expect(user.password).toNotBe(password);
+                //jest
+                expect(user.password).not.toBe(password);
                 done();
             }).catch((e)=> done(e));
         });
@@ -378,7 +397,7 @@ describe('POST /users/login', ()=>{
         })
         .expect(200)
         .expect((res)=>{
-            expect(res.headers['x-auth']).toExist();
+            expect(res.headers['x-auth']).toBeTruthy();
         })
         .end((err,res)=>{
             if(err){
@@ -391,10 +410,25 @@ describe('POST /users/login', ()=>{
             //logged in added another token
             User.findById(users[1]._id).then((user)=>{
                 //token created
-                expect(user.tokens[1]).toInclude({
+                //mjackson expect
+                //-----
+                // expect(user.tokens[1]).toInclude({
+                //     access: 'auth',
+                //     token: res.headers['x-auth']
+                // });
+                //----
+                //jest
+                //toMatchObject(2nd obj): 2nd obj is a subset of 1st obj
+                //mjackson expect was able to correctly parse stuffs out from
+                //mongoose that's on user, new version will throw err
+
+                expect(user.toObject().tokens[1]).toMatchObject({
                     access: 'auth',
                     token: res.headers['x-auth']
                 });
+                //toObject() return raw user obj, none of mongoose internal methods or
+                //inner workings of mongoose presence as in db
+
                 done();
             }).catch((e)=> done(e));
         });
@@ -407,7 +441,10 @@ describe('POST /users/login', ()=>{
         .post('/users/login')
         .expect(400)
         .expect((res)=>{
-            expect(res.headers['x-auth']).toNotExist();
+            //mjackson
+            //expect(res.headers['x-auth']).toNotExist();
+            //jest
+            expect(res.headers['x-auth']).toBeFalsy();
             //expect(users[1].tokens).toNotExist();
             //access from seed
         })
@@ -448,6 +485,7 @@ describe('DELETE /users/me/token', ()=>{
     });
 })
 
-
+//upgraded expect from1. sth-> 21. sth: only change where use expect var
+//not expect method
 
 
